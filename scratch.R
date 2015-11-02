@@ -35,22 +35,20 @@
 source("http://bit.ly/dasi_inference")
 set.seed(42)
 
-data <- read.csv("https://s3.amazonaws.com/ed-college-choice-public/Most+Recent+Cohorts+(All+Data+Elements).csv", na.strings = c("NULL", "PrivacySuppressed"))
-#data_treasury <- read.csv("https://s3.amazonaws.com/ed-college-choice-public/Most+Recent+Cohorts+(Treasury+Elements).csv", na.strings = c("NULL", "PrivacySuppressed"))
+download.file("https://s3.amazonaws.com/ed-college-choice-public/Most+Recent+Cohorts+(All+Data+Elements).csv", destfile = "Most+Recent+Cohorts+(All+Data+Elements).csv")
+data <- read.csv("Most+Recent+Cohorts+(All+Data+Elements).csv", na.strings = c("NULL", "PrivacySuppressed"))
 data$COSTT4 <- with(data, ifelse(is.na(COSTT4_A), COSTT4_P, COSTT4_A)) # select column with non-NA value
-#data$cost_cat <- cut(data$COSTT4, 4) # divided evenly into 4 groups
 cdata <- data[,c("COSTT4", "gt_25k_p10")]
-cdata$cost_cat <- as.factor(findInterval(data$COSTT4, seq(0, 60000, by=10000))) # divided into 6 groups (may have zero count buckets)
+cdata$cost_cat <- as.factor(findInterval(data$COSTT4, seq(0, 50000, by=25000))) # divided into 6 groups (may have zero count buckets)
 cdata <- cdata[complete.cases(cdata),] # drop NA rows
 cdata$COSTT4 <- NULL # Drop price column
-# IS THIS NECESSARY WITH ANOVA?
 cdata <- cdata[sample(nrow(cdata), round(nrow(data) / 10)),] # sample random rows (10% of total population)
 
 inference(cdata$gt_25k_p10, cdata$cost_cat, est="mean", type = "ht", method = "theoretical", alternative = "greater")
 
-hist(cdata$COSTT4, xlab="Cost in $", main ="Average Cost of Attendance")
+#hist(cdata$COSTT4, xlab="Cost in $", main ="Average Cost of Attendance")
 
-plot(by(cdata$gt_25k_p10, cdata$costLevel, mean))
+#plot(by(cdata$gt_25k_p10, cdata$cost_cat, mean))
 
 # maybe divide gt_25k into 4 levels ???
 # This measure describes the fraction of former students earning over $25,000 in 2014 constant dollars (gt_25k_p*).
@@ -59,3 +57,25 @@ plot(by(cdata$gt_25k_p10, cdata$costLevel, mean))
 #cdata$costCut <- cut(cdata$COSTT4, 4) # divided evenly into 4 groups
 #cdata$costLevel <- as.factor(findInterval(cdata$COSTT4, seq(0, 80000, by=5000))) # divided into 80/5 groups (may have zero count buckets)
 
+# conditions for inference based on length
+# To do this, you'll need to obtain sample sizes to check the conditions
+by(cdata$gt_25k_p10, cdata$cost_cat, length)
+
+summary(cdata$gt_25k_p10)
+summary(cdata$cost_cat)
+
+hist(cdata$gt_25k_p10)
+plot(cdata$cost_cat)
+#plot(cdata$gt_25k_p10~cdata$cost_cat) # duplicates inference plot
+
+# shows means across groups
+by(cdata$gt_25k_p10, cdata$cost_cat, mean)
+plot(by(cdata$gt_25k_p10, cdata$cost_cat, mean))
+
+# whisker plots
+#boxplot(cdata$gt_25k_p10~cdata$cost_cat) # duplicates inference plot
+#qqplot(cdata$cost_cat, cdata$gt_25k_p10)
+qqnorm(cdata$gt_25k_p10, main = "Percentage of Alumni...")
+qqline(cdata$gt_25k_p10, col = "red")
+
+# end with inference plot (to get f-test graph)

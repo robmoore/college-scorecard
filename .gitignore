@@ -6,3 +6,4 @@
 *.html
 *.pdf
 *_cache
+inference.R

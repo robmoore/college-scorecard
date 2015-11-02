@@ -6,75 +6,106 @@ output:
     theme: cerulean
 ---
 
-```{r echo=FALSE,cache=TRUE}
+```{r echo=FALSE, cache=TRUE}
 source("http://bit.ly/dasi_inference")
 
-data <- read.csv("https://s3.amazonaws.com/ed-college-choice-public/Most+Recent+Cohorts+(All+Data+Elements).csv", na.strings = c("NULL", "PrivacySuppressed"))
-data$gt_25k_p10_b <- data$gt_25k_p10 > .5 # Turn into boolean value
-# COSTT4_A, (Average Cost Of Attendance, Tuition and Fees) 
+set.seed(42)
+
+result <- ifelse(!file.exists("Most+Recent+Cohorts+(All+Data+Elements).csv"), download.file("https://s3.amazonaws.com/ed-college-choice-public/Most+Recent+Cohorts+(All+Data+Elements).csv", destfile = "Most+Recent+Cohorts+(All+Data+Elements).csv"), FALSE)
+data <- read.csv("Most+Recent+Cohorts+(All+Data+Elements).csv", na.strings = c("NULL", "PrivacySuppressed"))
 data$COSTT4 <- with(data, ifelse(is.na(COSTT4_A), COSTT4_P, COSTT4_A)) # select column with non-NA value
-cdata <- data[,c("COSTT4", "gt_25k_p10_b")]
+cdata <- data[,c("COSTT4", "gt_25k_p10")]
+cdata$cost_cat <- as.factor(findInterval(data$COSTT4, seq(0, 50000, by=25000))) # divided into 6 groups (may have zero count buckets)
 cdata <- cdata[complete.cases(cdata),] # drop NA rows
+complete.cases <- nrow(cdata)
+cdata$COSTT4 <- NULL # Drop price column
+cdata <- cdata[sample(nrow(cdata), round(nrow(data) / 10)),] # sample random rows (10% of total population)
 ```
 
 ### Introduction:
 
-* What is your research question? Why do you care? Why should others care?
+With the rising costs of higher education, the question of whether a college degree is a good return on investment becomes ever more salient. The release of the College Scorecard data from the US Department of Education this past September helps provide some means to evaluate the question of whether from a financial perspective graduates of post-secondary institutions outperform their peers who only have a high school degree.  The College Scorecard project has the stated goal of providing data evaluating post-secondary institutions in the US to help students and families compare college costs and outcomes as they weigh the trade-offs of different colleges, accounting for their own needs and educational goals. 
 
-1. Is there a well-defined and clearly stated research question?
-2. Did the author provide background on the research question as to why they care and why others should also care?
+As part of a larger data set, the College Scorecard data includes the percentage of graduates exceed the median yearly income of high school graduates ($25000)  as well as the annual 'sticker price' of attendance (including tuition and fees, books and supplies, and living expenses) for each post-secondary institution in the US. We would like to evaluate whether the cost of attendance for an institution is associated with a higher likelihood of alumni exceeding the median yearly income of high school graduates ten years after they first start pursuing their degree.
+
+We seek to answer the following, "Is the cost of a post-secondary degree positively associated with the percentage of graduates who make more than $25000 (the median income for those 25 to 34 holding a high school degree) 10 years after starting their degree?".
 
 ### Data:
 
-* Data collection: Describe how the data were collected.
-* Cases: What are the cases? (Remember: case = units of observation or units of experiment)
-* Variables: What are the two variables you will be studying? State the type of each variable.
-* Study: What is the type of study? Is it an observational study or an experiment? Explain how you've arrived at your conclusion using information on the sampling and/or experimental design.
-* Scope of inference - generalizability: Identify the population of interest, and whether the findings from this analysis can be generalized to that population, or, if not, a subsection of that population. Explain why or why not. Also discuss any potential sources of bias that might prevent generalizability.
-* Scope of inference - causality: Can these data be used to establish causal links between the variables of interest? Explain why or why not.
+The College Scorecard is an observational study. The data were collected using a combination of the US Department of Education's NCES (National Center of Education Statistics) and National Student Loan Data System (NSLDS) data as well as that taken from the Department of the Treasury. The NCES data is collected using surveys administered as part of the NCES's Integrated Post-secondary Education Data System (IPEDS) project. The NSLDS data is self-reported by schools, guaranty agencies, the Direct Loan program, and other US Department of Education programs. The Department of Treasury's data was collected from tax records of those who attended the institutions in the study.
 
-1. Data collection: Is the data collection explained clearly?
-2. Cases: Are the cases (the units of observation or experimental units) explained clearly?
-3. Variables: Are the variable types identified accurately?
-4. Study: Is the type of study identified correctly? Is the supporting information on the sampling and/or experimental design of the study satisfactory for making the decision on the type of study?
-5. Scope of inference - generalizability: Did the writer correctly identify the population of interest? Did the writer correctly decide whether the findings from this analysis can be generalized to that population, or, if not, a subsection of that population? Is their explanation satisfactory to make this decision? Are potential sources of bias discussed, and if so, is the discussion satisfactory?
-6. Scope of inference - causality: Did the writer identify correctly whether these data can be used to establish causal links between the variables of interest. Is the explanation satisfactory?
+There are `r nrow(data)` observations in the original data. However, we reviewed the cases where data exists for both columns (that is, complete cases). From this set of `r complete.cases` observations, we randomly sampled 10% of the data to arrive at a total of `r nrow(cdata)` cases.
+
+Each case or observation represents a private or public institution of higher education in the US. 
+
+We will evaluate the annual cost of an institution using the ```COSTT4_A``` and ```COSTT4_P``` variables jointly (that is, as one variable) and it will act as our explanatory variable. These columns are mutually exclusive and apply to academic year institutions (```COSTT4_A```) and program-year institutions (```COSTT4_P```) respectively. These variables capture "the average annual cost of attendance includes tuition and fees, books and supplies, and living expenses for all full-time, first-time, degree-certificate-seeking undergraduates who receive Title IV aid". Since these values are mutually exclusive and capture the same information for the two degree types, we will create a new variable (```COSTT4```) which represents the annual cost for a given institution. Although this is not a categorical variable, we will treat it as such (that is, as a synthetic or dummy variable) and will produce a category number (1 through 3) which captures one of the three groups the cost falls within: 1: $0-25000, 2: $25001-$50000, or 3: $50000 or greater. 
+
+We will also consider the variable ```gt_25k_p10``` as our response variable. The value indicates the percentage of students whose income exceeds the median income of high school students 10 years from the start of their degree. 
+
+Given that the data is from an observational study, we cannot establish a causal link between the variables of interest. However, given that the data represents the population of US post-secondary institutions and because we have randomly sampled the data to select the observations we will study, we can generalize the results across the population of US post-secondary institutions.
 
 ### Exploratory data analysis:
 
-* Calculate and discuss relevant descriptive statistics, including summary statistics and visualizations of the data. Also address what the exploratory data analysis suggests about your research question.
+Looking at the mean values for the percentage of alumni whose income exceeds $25000 across our sample of institutions, we can see that the majority (59.65%) of alumni at these institutions are doing better than their peers with only a high school diploma. Furthermore, the data appear to be normally distributed.
 
-1. Are appropriate summary statistics calculated, and are they explained/interpreted in context of the data and the research question?
-2. Are appropriate visualizations included, and are they explained/interpreted in context of the data and the research question?
-3. Did the writer address what the findings from the exploratory analysis suggests about the research question?
+
+```{r}
+summary(cdata$gt_25k_p10)
+hist(cdata$gt_25k_p10, xlab = "Percentage", main = "Alumni with Income Exceeding $25K")
+```
+
+The cost of the institutions appears to be heavily weighted towards the lower end of the spectrum with 65% of the institutions below the $25000 mark.
+
+```{r}
+summary(cdata$cost_cat)
+plot(cdata$cost_cat, main = "Number of Institutions by Cost Category")
+```
+
+A cursory comparison of the means across each group suggests that there is an association between the cost and the percentage of students whose income exceeds $25000.
+
+```{r}
+plot(by(cdata$gt_25k_p10, cdata$cost_cat, mean), main = "Proportion Mean by Cost Category", ylab = "Mean", xlab = "Category")
+```
 
 ### Inference:
 
-* State hypotheses
-* Check conditions
-* State the method(s) to be used and why and how
-* Perform inference
-* Interpret results
-* If applicable, state whether results from various methods agree
+#### Hypothesis
 
-1. Are the hypothesis is stated clearly and matches the research question?
-2. Are the conditions checked in context of the data (not just a generic bullet point list of the conditions, but reasoning through them for the given dataset)?
-3. Are the appropriate method(s) the writer will be using stated? Did the author provide a discussion of why they chose these methods, and described how they work? Note that in this part the author should display a thorough and conceptual understanding of how the methodology works, however the write-up does not need to be as detailed as if they were teaching the method to someone with no background in statistics.
-4. Was the correct code used and output provided for all required techniques? 
-5. Are correct interpretations and conclusions for all output provided? Note that this portion should be evaluated based on criteria stated earlier about which technique is required when). This includes some or all of
-* conclusions of hypothesis tests,
-* interpretations of p-values as conditional probabilities, and
-* interpretations of confidence intervals
-depending on the methods used. All interpretations must be in context of the data and the research question.
-6. Is whether or not results from hypothesis test and confidence interval agree stated? Or, if doing ANOVA or chi-square testing, did the author state that no other methods were applicable and hence there's nothing to compare?
+We tested the following hypothesis:
+
+$H_0$: The average percentage of alumni making greater than $25K is identical for each group.
+$$
+\mu_1 = \mu_2 = \mu_3
+$$
+$H_A$: The average percentage of alumni making greater than $25K varies for some (or all) groups.
+
+Based on the analysis of one numeric variable and one categorical variable, we pursued an ANOVA hypothesis test.
+
+#### Criteria
+
+Since we used a random sample of the population, we believe the independence criteria to be met. 
+
+A Q-Q plot analysis suggests that the data are normally distributed.
+```{r}
+qqnorm(cdata$gt_25k_p10)
+qqline(cdata$gt_25k_p10, col = "red")
+```
+
+While an analysis of the data appear to show a clear association between the cost and the percentage of alumni whose annual income exceeds the $25000 level, the variance across groups does not appear to be constant across all three groups. Groups 1 and 2 do appear to be relatively similar with standard deviations of .1607 and .1236 respectively while group 3 is nearly half of group 1 (.0852). This may call our findings into question.
+
+#### Results
+
+Using a Bonforroni corrected value for $\alpha$, gives us an $\alpha$ value of `r .05/(3 * 2 / 2)`. Our ANOVA summary shows a F test statistic of 106.13 and a p-value of $`r 2.2e-16`$ which is smaller than our adjusted significance value. Assuming the constant variance criteria is not enough to invalidate our findings, we are able to reject the null hypothesis since the probability of seeing as an extreme outcome as this is practically zero if the null hypothesis were correct.
+
+```{r}
+inference(cdata$gt_25k_p10, cdata$cost_cat, est="mean", type = "ht", method = "theoretical", alternative = "greater")
+```
 
 ### Conclusion:
 
-* Write a brief summary of your findings without repeating your statements from earlier. Include a discussion of what you have learned about your research question and the data you collected, and include ideas for possible future research.
+Our findings provide a basis for making an association between the cost of post-secondary institutions and the likelihood that their alumni will do better financially than high school graduates. As such, it may be worth questioning whether cost alone is sufficient to make such a judgement as other factors, such as the ability to afford to attend such an insitution, may be a more powerful indicator of   the earning potential of a graduate. 
 
-1. Is there a brief summary of findings that does not repeat previous statements?
-2. Is a discussion of what was learned about the research question provided?
-3. Are ideas for possible future research and/or discussion of additional synthesis or possible shortcomings of study provided?
+As alluded to above, the question of constant variance is one that needs to be futher explored. It may be possible using a different sample size or using repeated sampling to reach a variance across groups that meets this criteria. Furthermore, given the variability of group 1 (ie, the lower cost institutions) in particular, it seems warranted to examine differences within groups to understand why some schools are performing significantly better despite being similar in terms of cost. That is, we could explore whether if we can identify other factors that might explain the difference in performance while holding cost equal.
 
 ### References:
 
@@ -82,8 +113,11 @@ College Scorecard Data. (2015, September 12). Retrieved November 1, 2015, from h
 Data Documentation For College Scorecard. (2015, September 12). Retrieved November 1, 2015, from https://collegescorecard.ed.gov/data
 What is the variable that closest resembles Sticker Price? (2015, October 1). Retrieved November 1, 2015, from http://opendata.stackexchange.com/questions/6127/what-is-the-variable-that-closest-resembles-sticker-price
 
-### Appendix:
+Please note, the code used to produce this report is available at https://github.com/robmoore/college-scorecard
 
-Take 1 page of your data set and attach it to your proposal. If your data fits in one page, great. If you have too many observations and it won’t fit, that’s ok too, just crop it at one page. However your print out should contain all relevant columns (this shouldn’t be an issue since you are working with one or two variables for your project).
+### Appendix:
+```{r}
+head(cdata, 250)
+```
 
 
