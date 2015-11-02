@@ -1,0 +1,89 @@
+---
+title: "Earning potential of alumni based on cost of US post-secondary institutions"
+date: "1 November 2015"
+output:
+  html_document:
+    theme: cerulean
+---
+
+```{r echo=FALSE,cache=TRUE}
+source("http://bit.ly/dasi_inference")
+
+data <- read.csv("https://s3.amazonaws.com/ed-college-choice-public/Most+Recent+Cohorts+(All+Data+Elements).csv", na.strings = c("NULL", "PrivacySuppressed"))
+data$gt_25k_p10_b <- data$gt_25k_p10 > .5 # Turn into boolean value
+# COSTT4_A, (Average Cost Of Attendance, Tuition and Fees) 
+data$COSTT4 <- with(data, ifelse(is.na(COSTT4_A), COSTT4_P, COSTT4_A)) # select column with non-NA value
+cdata <- data[,c("COSTT4", "gt_25k_p10_b")]
+cdata <- cdata[complete.cases(cdata),] # drop NA rows
+```
+
+### Introduction:
+
+* What is your research question? Why do you care? Why should others care?
+
+1. Is there a well-defined and clearly stated research question?
+2. Did the author provide background on the research question as to why they care and why others should also care?
+
+### Data:
+
+* Data collection: Describe how the data were collected.
+* Cases: What are the cases? (Remember: case = units of observation or units of experiment)
+* Variables: What are the two variables you will be studying? State the type of each variable.
+* Study: What is the type of study? Is it an observational study or an experiment? Explain how you've arrived at your conclusion using information on the sampling and/or experimental design.
+* Scope of inference - generalizability: Identify the population of interest, and whether the findings from this analysis can be generalized to that population, or, if not, a subsection of that population. Explain why or why not. Also discuss any potential sources of bias that might prevent generalizability.
+* Scope of inference - causality: Can these data be used to establish causal links between the variables of interest? Explain why or why not.
+
+1. Data collection: Is the data collection explained clearly?
+2. Cases: Are the cases (the units of observation or experimental units) explained clearly?
+3. Variables: Are the variable types identified accurately?
+4. Study: Is the type of study identified correctly? Is the supporting information on the sampling and/or experimental design of the study satisfactory for making the decision on the type of study?
+5. Scope of inference - generalizability: Did the writer correctly identify the population of interest? Did the writer correctly decide whether the findings from this analysis can be generalized to that population, or, if not, a subsection of that population? Is their explanation satisfactory to make this decision? Are potential sources of bias discussed, and if so, is the discussion satisfactory?
+6. Scope of inference - causality: Did the writer identify correctly whether these data can be used to establish causal links between the variables of interest. Is the explanation satisfactory?
+
+### Exploratory data analysis:
+
+* Calculate and discuss relevant descriptive statistics, including summary statistics and visualizations of the data. Also address what the exploratory data analysis suggests about your research question.
+
+1. Are appropriate summary statistics calculated, and are they explained/interpreted in context of the data and the research question?
+2. Are appropriate visualizations included, and are they explained/interpreted in context of the data and the research question?
+3. Did the writer address what the findings from the exploratory analysis suggests about the research question?
+
+### Inference:
+
+* State hypotheses
+* Check conditions
+* State the method(s) to be used and why and how
+* Perform inference
+* Interpret results
+* If applicable, state whether results from various methods agree
+
+1. Are the hypothesis is stated clearly and matches the research question?
+2. Are the conditions checked in context of the data (not just a generic bullet point list of the conditions, but reasoning through them for the given dataset)?
+3. Are the appropriate method(s) the writer will be using stated? Did the author provide a discussion of why they chose these methods, and described how they work? Note that in this part the author should display a thorough and conceptual understanding of how the methodology works, however the write-up does not need to be as detailed as if they were teaching the method to someone with no background in statistics.
+4. Was the correct code used and output provided for all required techniques? 
+5. Are correct interpretations and conclusions for all output provided? Note that this portion should be evaluated based on criteria stated earlier about which technique is required when). This includes some or all of
+* conclusions of hypothesis tests,
+* interpretations of p-values as conditional probabilities, and
+* interpretations of confidence intervals
+depending on the methods used. All interpretations must be in context of the data and the research question.
+6. Is whether or not results from hypothesis test and confidence interval agree stated? Or, if doing ANOVA or chi-square testing, did the author state that no other methods were applicable and hence there's nothing to compare?
+
+### Conclusion:
+
+* Write a brief summary of your findings without repeating your statements from earlier. Include a discussion of what you have learned about your research question and the data you collected, and include ideas for possible future research.
+
+1. Is there a brief summary of findings that does not repeat previous statements?
+2. Is a discussion of what was learned about the research question provided?
+3. Are ideas for possible future research and/or discussion of additional synthesis or possible shortcomings of study provided?
+
+### References:
+
+College Scorecard Data. (2015, September 12). Retrieved November 1, 2015, from https://collegescorecard.ed.gov/data
+Data Documentation For College Scorecard. (2015, September 12). Retrieved November 1, 2015, from https://collegescorecard.ed.gov/data
+What is the variable that closest resembles Sticker Price? (2015, October 1). Retrieved November 1, 2015, from http://opendata.stackexchange.com/questions/6127/what-is-the-variable-that-closest-resembles-sticker-price
+
+### Appendix:
+
+Take 1 page of your data set and attach it to your proposal. If your data fits in one page, great. If you have too many observations and it won’t fit, that’s ok too, just crop it at one page. However your print out should contain all relevant columns (this shouldn’t be an issue since you are working with one or two variables for your project).
+
+
